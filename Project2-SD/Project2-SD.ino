@@ -36,11 +36,9 @@ void loop() {
     driveRead();
     Serial.println("finished. Clear txt? y / n");
     
-    char selection;
-    
     while(!Serial.available());
     
-    selection = Serial.read();
+    char selection = Serial.read();
     
     switch(selection){
         case 'y':
@@ -56,7 +54,23 @@ void loop() {
             Serial.println("Removing");
             SD.remove("gps-log.txt");
     }
-    while(1);
+
+    Serial.println("Run write example again? y / n");
+
+    while(!Serial.available());
+
+    selection = Serial.read();
+
+    switch(selection){
+	case 'y':
+		break;
+	case 'n':
+		while(1);
+	default:
+		Serial.println("running again...");
+		break;
+   	 }
+
 }
 
 void driveRead(){
