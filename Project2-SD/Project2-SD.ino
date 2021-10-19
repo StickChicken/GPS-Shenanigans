@@ -65,6 +65,7 @@ void loop() {
 	case 'y':
 		break;
 	case 'n':
+		Serial.println("exiting example...");
 		while(1);
 	default:
 		Serial.println("running again...");
