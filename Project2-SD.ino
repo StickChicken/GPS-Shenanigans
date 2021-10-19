@@ -89,7 +89,7 @@ void driveRead(){
 void driveWrite(String s){
     myFile = SD.open("gps-log.txt", FILE_WRITE);
         if(myFile){
-                myFile.println(s);
+                myFile.print(s);
         }
         myFile.close();
 }
