@@ -1,0 +1,20 @@
+void setup(){
+    define pinmodes
+    create i2c objects
+    create sd object
+    
+    if logfile does not exist, create it
+    start serial comms
+    start gps coms
+    if gps is connected to sats set LED_Pin = 1
+    else print error message ---> while(1);
+}
+
+void loop(){
+    get gps data (location, time)
+    get various sensor data (magnetometer, gyro, etc...)
+    concatenate into string. format properly
+    save string to SD card
+    print string to serial monitor    
+}
+
