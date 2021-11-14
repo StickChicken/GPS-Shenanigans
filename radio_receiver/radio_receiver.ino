@@ -63,7 +63,6 @@ void loop() {
       
     len = radio.getPayloadSize();
     radio.read(&gotmsg, len);
-    String msg = gotmsg + 0;
     Serial.print(F("Received "));
     Serial.print(len);                    // print the size of the payload
     Serial.print(F(" bytes on pipe "));
