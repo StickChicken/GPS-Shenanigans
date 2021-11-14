@@ -70,7 +70,5 @@ void loop() {
     Serial.print(pipe);                     // print the pipe number
     Serial.print(F(": "));
     Serial.println(gotmsg);                // print the payload's value
-    //radio.read(&gotmsg, len);
-    //Serial.println(gotmsg);
   }
 }
