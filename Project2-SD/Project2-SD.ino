@@ -5,9 +5,9 @@ File myFile;
 
 void setup() {
     Serial.begin(9600);
-    pinMode(10, OUTPUT);
+    pinMode(7, OUTPUT);
     
-    if(!SD.begin(10)){
+    if(!SD.begin(7)){
         Serial.println("SD Init Failed...");
         while(1);
     }

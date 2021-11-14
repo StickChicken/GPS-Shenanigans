@@ -30,7 +30,7 @@ char payload[] = "testing\0";
 
 void setup() {
 
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) {
     // some boards need to wait to ensure access to serial over USB
   }
@@ -80,4 +80,3 @@ void loop() {
     // to make this example readable in the serial monitor
     delay(1000);  // slow transmissions down by 1 second
   }
-} // loop
