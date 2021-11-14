@@ -43,7 +43,7 @@ void setup() {
   // because these examples are likely run with nodes in close proximity to
   // each other.
   radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
-  radio.setPayloadSize(7);
+  radio.setPayloadSize(32);
   // set the RX address of the TX node into a RX pipe
   radio.openReadingPipe(1, address[!radioNumber]); // using pipe 1
   radio.startListening(); // put radio in RX mode
@@ -59,7 +59,8 @@ void loop() {
   uint8_t pipe;
   if (radio.available(&pipe)) {             // is there a payload? get the pipe number that recieved it
     int len=0;
-    char gotmsg[33]="abcdefghigklmnopqrstuvwxyzabcdef\0";
+    char gotmsg[33]="abcdefghijklmnopqrstuvwxyzabcdef";
+    gotmsg[32] = '\0';
       
     len = radio.getPayloadSize();
     radio.read(&gotmsg, len);
