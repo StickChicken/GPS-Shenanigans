@@ -17,7 +17,7 @@ bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to tra
 void setup() {
   
   Serial.begin(115200);
-  radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
+  radio.setPALevel(RF24_PA_MIN);  // RF24_PA_MAX is default.
   radio.setPayloadSize(sizeof("test"));
   // set the RX address of the TX node into a RX pipe
   radio.openReadingPipe(1, address[!radioNumber]); // using pipe 1   
