@@ -59,7 +59,7 @@ void loop() {
   uint8_t pipe;
   if (radio.available(&pipe)) {             // is there a payload? get the pipe number that recieved it
     int len=0;
-    char gotmsg[]="abcdefg\0";
+    char gotmsg[33]="abcdefghigklmnopqrstuvwxyzabcdef\0";
       
     len = radio.getPayloadSize();
     radio.read(&gotmsg, len);
@@ -69,5 +69,7 @@ void loop() {
     Serial.print(pipe);                     // print the pipe number
     Serial.print(F(": "));
     Serial.println(gotmsg);                // print the payload's value
+    //radio.read(&gotmsg, len);
+    //Serial.println(gotmsg);
   }
 }

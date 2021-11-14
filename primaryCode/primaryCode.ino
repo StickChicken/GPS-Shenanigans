@@ -4,8 +4,8 @@
 #include "printf.h"
 #include "RF24.h"
 
-#define MPU_ADDR 0x68
-#define MAG_ADDR 0x0C
+#define MPU_ADDR 0x68 //MPU I2C Address
+#define MAG_ADDR 0x0C //Magnetometer I2C Address
 
 int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
 int16_t gyro_x, gyro_y, gyro_z; // variables for gyro raw data
@@ -17,9 +17,10 @@ char tmp_str[7]; // temporary variable used in convert function
 RF24 radio(9, 10); // Use pin 9 for radio CE, use pin 10 for radio CSN
 uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
 bool radioNumber = 0; //Designates TX or RX radio
-char payload[] = "testing\0";
 
-bool gpsUpdate = false;
+bool gpsUpdate = false; //flags to tell if sensors updated so CSV stays in order
+bool magUpdate = false;
+bool gyroUpdate = false;
 
 File myFile;
 
@@ -30,8 +31,6 @@ void setup() {
   gyroSetup();
   magSetup();
   //radioSetup();
-  
-
 }
 
 void loop() {
@@ -54,6 +53,7 @@ void gyroSetup() {
   Wire.write(0x6B); // PWR_MGMT_1 register
   Wire.write(0); // set to zero (wakes up the MPU-6050)
   Wire.endTransmission(true);
+  delay(100);
 }
 void magSetup() {
   Wire.beginTransmission(MAG_ADDR);
@@ -77,9 +77,51 @@ void magSetup() {
     unsigned int c = Wire.read();
   }
   Wire.endTransmission();
-  delay(300);
+  delay(100);
 }
 
+void radioSetup(){
+  // initialize the transceiver on the SPI bus
+  if (!radio.begin()) {
+    Serial.println("radio hardware is not responding!!");
+    while (1) {} // hold in infinite loop
+  }
+
+  // Set the PA Level low to try preventing power supply related problems
+  // because these examples are likely run with nodes in close proximity to
+  // each other.
+  radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
+
+  // save on transmission time by setting the radio to only transmit the
+  // number of bytes we need to transmit a float
+  radio.setPayloadSize(strlen(payload)); // float datatype occupies 4 bytes
+
+  // set the TX address of the RX node into the TX pipe
+  radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
+  radio.stopListening();  // put radio in TX mode
+
+  delay(100);
+}
+
+void sdSetup(){
+    pinMode(8, OUTPUT);
+    
+    if(!SD.begin(8)){
+        Serial.println("SD Init Failed...");
+        while(1);
+    }
+    Serial.println("SD Init Success...");
+    
+    //probably gonna want to wipe the SD card and start new each time. Or add a time and date.
+    if (SD.exists("gps-log.txt")) {
+        Serial.println("gps-log exists.");
+        }     
+    else {
+            Serial.println("example.txt doesn't exist. Creating Now...");
+                myFile = SD.open("gps-log.txt", FILE_WRITE);
+                myFile.close();
+        }
+}
 
 void gyroRead() {
   Wire.beginTransmission(MPU_ADDR);
@@ -165,47 +207,6 @@ void magRead() {
   delay(500);
 }
 
-void radioSetup(){
-  // initialize the transceiver on the SPI bus
-  if (!radio.begin()) {
-    Serial.println(F("radio hardware is not responding!!"));
-    while (1) {} // hold in infinite loop
-  }
-
-  // Set the PA Level low to try preventing power supply related problems
-  // because these examples are likely run with nodes in close proximity to
-  // each other.
-  radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
-
-  // save on transmission time by setting the radio to only transmit the
-  // number of bytes we need to transmit a float
-  radio.setPayloadSize(strlen(payload)); // float datatype occupies 4 bytes
-
-  // set the TX address of the RX node into the TX pipe
-  radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
-  radio.stopListening();  // put radio in TX mode
-}
-
-void sdSetup(){
-    pinMode(8, OUTPUT);
-    
-    if(!SD.begin(8)){
-        Serial.println("SD Init Failed...");
-        while(1);
-    }
-    Serial.println("SD Init Success...");
-    
-    //probably gonna want to wipe the SD card and start new each time. Or add a time and date.
-    if (SD.exists("gps-log.txt")) {
-        Serial.println("gps-log exists.");
-        }     
-    else {
-            Serial.println("example.txt doesn't exist. Creating Now...");
-                myFile = SD.open("gps-log.txt", FILE_WRITE);
-                myFile.close();
-        }
-}
-
 void driveWrite(String s){
     myFile = SD.open("gps-log.txt", FILE_WRITE);
         if(myFile){
@@ -214,6 +215,16 @@ void driveWrite(String s){
         myFile.close();
 }
 
+void radioWrite(char[] msg) {
+  if(strlen(msg) <= 32) {
+    radio.write(msg);
+  } else {
+    String temp(msg);
+    for(int i = 0; i < strlen(msg); i += 32) {
+      char[] toWrite = strcpy(
+    }
+  }
+}
 /*
 
   // instantiate an object for the nRF24L01 transceiver
