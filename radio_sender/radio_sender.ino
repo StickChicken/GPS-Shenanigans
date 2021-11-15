@@ -9,10 +9,11 @@ uint8_t address[][6] = {"1Node", "2Node"};
 
 bool radioNumber = 0; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
 
-char payload[32] = {'t', 'e', 's', 't', 'i', 'n', 'g', '\0'};
+char payload[32] = {"testing"};
+
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) {
     // some boards need to wait to ensure access to serial over USB
   }
@@ -44,8 +45,9 @@ void setup() {
 } // setup
 
 void loop() {
-radio.write(&payload, 32);
-} // loop
+  radio.write();
+  
+}
 
 void radioWrite(){
   delay(1);

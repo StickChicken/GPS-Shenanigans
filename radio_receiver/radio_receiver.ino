@@ -28,7 +28,7 @@ bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to tra
 
 void setup() {
 
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) {
     // some boards need to wait to ensure access to serial over USB
   }
