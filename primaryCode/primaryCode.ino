@@ -4,8 +4,8 @@
 #include "printf.h"
 #include "RF24.h"
 
-#define MPU_ADDR 0x68 //MPU I2C Address
-#define MAG_ADDR 0x0C //Magnetometer I2C Address
+#define MPU_ADDR 0x68
+#define MAG_ADDR 0x0C
 
 int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
 int16_t gyro_x, gyro_y, gyro_z; // variables for gyro raw data
@@ -17,30 +17,65 @@ char tmp_str[7]; // temporary variable used in convert function
 RF24 radio(9, 10); // Use pin 9 for radio CE, use pin 10 for radio CSN
 uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
 bool radioNumber = 0; //Designates TX or RX radio
+char payload[32] = "radioSetup();radioSetup();";
 
-bool gpsUpdate = false; //flags to tell if sensors updated so CSV stays in order
-bool magUpdate = false;
-bool gyroUpdate = false;
+bool gpsUpdate = false;
 
 File myFile;
+byte sdPin = 7;
 
 void setup() {
   Wire.begin();
   Serial.begin(9600);
-  sdSetup();
+  radioSetup();  
+  sdSetup();  
   gyroSetup();
   magSetup();
-  //radioSetup();
+  
+
 }
 
 void loop() {
-  Serial.println("gyro data");
-  gyroRead();
-  Serial.println("=====================================================================================");
-  Serial.println("Magnetometer data");
-  magRead();
-  Serial.println("=====================================================================================");
-  delay(1000);
+    radioWrite();
+  }
+
+void radioWrite(){
+  digitalWrite(sdPin, HIGH);
+  delay(1);
+  radio.flush_tx();
+    unsigned long start_timer = micros();// start the timer
+
+    bool report = radioSend(payload);
+    //bool report = radio.write(&payload, 32);      // transmit & save the report
+    unsigned long end_timer = micros();                      // end the timer
+
+    if (report) {
+      Serial.print(F("Transmission successful! "));          // payload was delivered
+      Serial.print(F("Time to transmit = "));
+      Serial.print(end_timer - start_timer);                 // print the timer result
+      Serial.print(F(" us. Sent: "));
+      Serial.println(payload);                               // print payload sent
+    } else {
+      Serial.println(F("Transmission failed or timed out")); // payload was not delivered
+    }
+
+    // to make this example readable in the serial monitor
+    delay(1000);  // slow transmissions down by 1 second
+}
+bool radioSend(char msg[]) {
+   bool report = 0; 
+   if(strlen(msg) <= 32) {
+      report = radio.write(&msg, 32);
+      Serial.println("message sent");
+   } else {
+    char toWrite[7];
+    for(int i = 0; i < strlen(msg); i += 32) {
+      Serial.println("message sent");
+       strncpy(toWrite, msg+i, 32);
+       report = radio.write(&toWrite, strlen(toWrite));  
+    }
+   }
+   return report;
 }
 
 char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
@@ -53,7 +88,8 @@ void gyroSetup() {
   Wire.write(0x6B); // PWR_MGMT_1 register
   Wire.write(0); // set to zero (wakes up the MPU-6050)
   Wire.endTransmission(true);
-  delay(100);
+  Serial.println("gyro init complete");
+
 }
 void magSetup() {
   Wire.beginTransmission(MAG_ADDR);
@@ -77,51 +113,10 @@ void magSetup() {
     unsigned int c = Wire.read();
   }
   Wire.endTransmission();
-  delay(100);
+  Serial.println("mag init complete");
+  delay(300);
 }
 
-void radioSetup(){
-  // initialize the transceiver on the SPI bus
-  if (!radio.begin()) {
-    Serial.println("radio hardware is not responding!!");
-    while (1) {} // hold in infinite loop
-  }
-
-  // Set the PA Level low to try preventing power supply related problems
-  // because these examples are likely run with nodes in close proximity to
-  // each other.
-  radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
-
-  // save on transmission time by setting the radio to only transmit the
-  // number of bytes we need to transmit a float
-  radio.setPayloadSize(strlen(payload)); // float datatype occupies 4 bytes
-
-  // set the TX address of the RX node into the TX pipe
-  radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
-  radio.stopListening();  // put radio in TX mode
-
-  delay(100);
-}
-
-void sdSetup(){
-    pinMode(8, OUTPUT);
-    
-    if(!SD.begin(8)){
-        Serial.println("SD Init Failed...");
-        while(1);
-    }
-    Serial.println("SD Init Success...");
-    
-    //probably gonna want to wipe the SD card and start new each time. Or add a time and date.
-    if (SD.exists("gps-log.txt")) {
-        Serial.println("gps-log exists.");
-        }     
-    else {
-            Serial.println("example.txt doesn't exist. Creating Now...");
-                myFile = SD.open("gps-log.txt", FILE_WRITE);
-                myFile.close();
-        }
-}
 
 void gyroRead() {
   Wire.beginTransmission(MPU_ADDR);
@@ -207,48 +202,9 @@ void magRead() {
   delay(500);
 }
 
-void driveWrite(String s){
-    myFile = SD.open("gps-log.txt", FILE_WRITE);
-        if(myFile){
-                myFile.print(s);
-        }
-        myFile.close();
-}
-
-void radioWrite(char[] msg) {
-  if(strlen(msg) <= 32) {
-    radio.write(msg);
-  } else {
-    String temp(msg);
-    for(int i = 0; i < strlen(msg); i += 32) {
-      char[] toWrite = strcpy(
-    }
-  }
-}
-/*
-
-  // instantiate an object for the nRF24L01 transceiver
-  RF24 radio(9,10); // using pin 7 for the CE pin, and pin 8 for the CSN pin
-
-  // Let these addresses be used for the pair
-  uint8_t address[][6] = {"1Node", "2Node"};
-  // It is very helpful to think of an address as a path instead of as
-  // an identifying device destination
-
-  // to use different addresses on a pair of radios, we need a variable to
-  // uniquely identify which address this radio will use to transmit
-  bool radioNumber = 0; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
-
-  char payload[] = "testing\0";
-
-  void setup() {
-
-  Serial.begin(115200);
-  while (!Serial) {
-    // some boards need to wait to ensure access to serial over USB
-  }
-
+void radioSetup(){
   // initialize the transceiver on the SPI bus
+  delay(1000);
   if (!radio.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
     while (1) {} // hold in infinite loop
@@ -266,32 +222,36 @@ void radioWrite(char[] msg) {
   // set the TX address of the RX node into the TX pipe
   radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
   radio.stopListening();  // put radio in TX mode
+  Serial.println("Radio init success...");
+}
 
-  // For debugging info
-  // printf_begin();             // needed only once for printing details
-  // radio.printDetails();       // (smaller) function that prints raw register values
-  // radio.printPrettyDetails(); // (larger) function that prints human readable data
-
-  } // setup
-
-  void loop() {
-    radio.flush_tx();
-    unsigned long start_timer = micros();                    // start the timer
-    bool report = radio.write(&payload, strlen(payload));      // transmit & save the report
-    unsigned long end_timer = micros();                      // end the timer
-
-    if (report) {
-      Serial.print(F("Transmission successful! "));          // payload was delivered
-      Serial.print(F("Time to transmit = "));
-      Serial.print(end_timer - start_timer);                 // print the timer result
-      Serial.print(F(" us. Sent: "));
-      Serial.println(payload);                               // print payload sent
-    } else {
-      Serial.println(F("Transmission failed or timed out")); // payload was not delivered
+void sdSetup(){  
+    pinMode(sdPin, OUTPUT);
+    digitalWrite(sdPin, LOW);
+    if(!SD.begin(sdPin)){
+        Serial.println("SD Init Failed...");
+        
     }
+    Serial.println("SD Init Success...");
+    
+    //probably gonna want to wipe the SD card and start new each time. Or add a time and date.
+    if (SD.exists("gps-log.txt")) {
+        Serial.println("gps-log exists.");
+        }     
+    else {
+            Serial.println("example.txt doesn't exist. Creating Now...");
+                myFile = SD.open("gps-log.txt", FILE_WRITE);
+                myFile.close();
+        }
+     digitalWrite(sdPin, HIGH);
+}
 
-    // to make this example readable in the serial monitor
-    delay(1000);  // slow transmissions down by 1 second
-  }
-  } // loop
-*/
+void driveWrite(String s){
+    digitalWrite(sdPin, LOW);
+    myFile = SD.open("gps-log.txt", FILE_WRITE);
+        if(myFile){
+                myFile.print(s);
+        }
+        myFile.close();
+        digitalWrite(sdPin, HIGH);
+}
