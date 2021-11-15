@@ -27,25 +27,22 @@ byte sdPin = 7;
 void setup() {
   Wire.begin();
   Serial.begin(9600);
+  //sdSetup();
   radioSetup();  
-  sdSetup();  
-  gyroSetup();
-  magSetup();
-  
+    
+  //gyroSetup();
+  //magSetup(); 
 
 }
 
 void loop() {
     radioWrite();
+    delay(500);
 }
 
 void radioWrite(){
-  digitalWrite(sdPin, HIGH);
-  delay(1);
   radio.flush_tx();
   radioSend(payload);
-  // to make this example readable in the serial monitor
-  delay(100);  // slow transmissions down by 1 second
 }
 bool radioSend(char msg[]) {
    bool report = 0; 
@@ -188,7 +185,6 @@ void magRead() {
 
 void radioSetup(){
   // initialize the transceiver on the SPI bus
-  delay(1000);
   if (!radio.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
     while (1) {} // hold in infinite loop
@@ -211,7 +207,6 @@ void radioSetup(){
 
 void sdSetup(){  
     pinMode(sdPin, OUTPUT);
-    digitalWrite(sdPin, LOW);
     if(!SD.begin(sdPin)){
         Serial.println("SD Init Failed...");
         
@@ -227,15 +222,15 @@ void sdSetup(){
                 myFile = SD.open("gps-log.txt", FILE_WRITE);
                 myFile.close();
         }
-     digitalWrite(sdPin, HIGH);
+     digitalWrite(sdPin, LOW);
 }
 
 void driveWrite(String s){
-    digitalWrite(sdPin, LOW);
+    digitalWrite(sdPin, HIGH);
     myFile = SD.open("gps-log.txt", FILE_WRITE);
         if(myFile){
                 myFile.print(s);
         }
         myFile.close();
-        digitalWrite(sdPin, HIGH);
+        digitalWrite(sdPin, LOW);
 }

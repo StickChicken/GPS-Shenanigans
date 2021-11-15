@@ -9,7 +9,7 @@ uint8_t address[][6] = {"1Node", "2Node"};
 
 bool radioNumber = 0; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
 
-char payload[8] = {'t', 'e', 's', 't', 'i', 'n', 'g', '\0'};
+char payload[32] = {'t', 'e', 's', 't', 'i', 'n', 'g', '\0'};
 
 void setup() {
   Serial.begin(115200);
@@ -30,7 +30,7 @@ void setup() {
 
   // save on transmission time by setting the radio to only transmit the
   // number of bytes we need to transmit a float
-  radio.setPayloadSize(strlen(payload) + 1);
+  radio.setPayloadSize(32);
   
   // set the TX address of the RX node into the TX pipe
   radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
@@ -44,20 +44,27 @@ void setup() {
 } // setup
 
 void loop() {
-  unsigned long start_timer = micros();                    // start the timer
-  bool report = radio.write(&payload, radio.getPayloadSize());      // transmit & save the report
-  unsigned long end_timer = micros();  // end the timer
-  
-  if (report) {
-   Serial.print(F("Transmission successful! "));          // payload was delivered
-   Serial.print(F("Time to transmit = "));
-   Serial.print(end_timer - start_timer);                 // print the timer result
-   Serial.print(F(" us. Sent: "));
-   Serial.println(payload);                               // print payload sent   
-  } else {
-    Serial.println(F("Transmission failed or timed out")); // payload was not delivered
-  }
-
-  // to make this example readable in the serial monitor
-  delay(1000);  // slow transmissions down by 1 second
+radio.write(&payload, 32);
 } // loop
+
+void radioWrite(){
+  delay(1);
+  radio.flush_tx();
+  radioSend(payload);
+  // to make this example readable in the serial monitor
+  delay(100);  // slow transmissions down by 1 second
+}
+bool radioSend(char msg[]) {
+   bool report = 0; 
+   char toWrite[32];
+   if(strlen(msg) <= 32) {
+      strncpy(toWrite, msg, 32);
+      report = radio.write(&toWrite, 32);
+   } else {
+    for(int i = 0; i < strlen(msg); i += 32) {
+       strncpy(toWrite, msg+i, 32);
+       report = radio.write(&toWrite, strlen(toWrite));  
+    }
+   }
+   return report;
+}
