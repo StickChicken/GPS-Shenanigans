@@ -9,10 +9,10 @@ uint8_t address[][6] = {"1Node", "2Node"};
 
 bool radioNumber = 0; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
 
-char payload[8] = {'t', 'e', 's', 't', 'i', 'n', 'g', '\0'};
+char payload[32] = {"testing"};
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) {
     // some boards need to wait to ensure access to serial over USB
   }
@@ -30,7 +30,7 @@ void setup() {
 
   // save on transmission time by setting the radio to only transmit the
   // number of bytes we need to transmit a float
-  radio.setPayloadSize(strlen(payload) + 1);
+  radio.setPayloadSize(32);
   
   // set the TX address of the RX node into the TX pipe
   radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
@@ -45,7 +45,7 @@ void setup() {
 
 void loop() {
   unsigned long start_timer = micros();                    // start the timer
-  bool report = radio.write(&payload, radio.getPayloadSize());      // transmit & save the report
+  bool report = radio.write(&payload, 32);      // transmit & save the report
   unsigned long end_timer = micros();  // end the timer
   
   if (report) {
