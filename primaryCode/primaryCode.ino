@@ -17,7 +17,7 @@ char tmp_str[7]; // temporary variable used in convert function
 RF24 radio(9, 10); // Use pin 9 for radio CE, use pin 10 for radio CSN
 uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
 bool radioNumber = 0; //Designates TX or RX radio
-char payload[32] = "radioSetup();radioSetup();";
+char payload[] = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz";
 
 bool gpsUpdate = false;
 
@@ -37,40 +37,24 @@ void setup() {
 
 void loop() {
     radioWrite();
-  }
+}
 
 void radioWrite(){
   digitalWrite(sdPin, HIGH);
   delay(1);
   radio.flush_tx();
-    unsigned long start_timer = micros();// start the timer
-
-    bool report = radioSend(payload);
-    //bool report = radio.write(&payload, 32);      // transmit & save the report
-    unsigned long end_timer = micros();                      // end the timer
-
-    if (report) {
-      Serial.print(F("Transmission successful! "));          // payload was delivered
-      Serial.print(F("Time to transmit = "));
-      Serial.print(end_timer - start_timer);                 // print the timer result
-      Serial.print(F(" us. Sent: "));
-      Serial.println(payload);                               // print payload sent
-    } else {
-      Serial.println(F("Transmission failed or timed out")); // payload was not delivered
-    }
-
-    // to make this example readable in the serial monitor
-    delay(1000);  // slow transmissions down by 1 second
+  radioSend(payload);
+  // to make this example readable in the serial monitor
+  delay(100);  // slow transmissions down by 1 second
 }
 bool radioSend(char msg[]) {
    bool report = 0; 
+   char toWrite[32];
    if(strlen(msg) <= 32) {
-      report = radio.write(&msg, 32);
-      Serial.println("message sent");
+      strncpy(toWrite, msg, 32);
+      report = radio.write(&toWrite, 32);
    } else {
-    char toWrite[7];
     for(int i = 0; i < strlen(msg); i += 32) {
-      Serial.println("message sent");
        strncpy(toWrite, msg+i, 32);
        report = radio.write(&toWrite, strlen(toWrite));  
     }
@@ -217,7 +201,7 @@ void radioSetup(){
 
   // save on transmission time by setting the radio to only transmit the
   // number of bytes we need to transmit a float
-  radio.setPayloadSize(strlen(payload)); // float datatype occupies 4 bytes
+  radio.setPayloadSize(32); // float datatype occupies 4 bytes
 
   // set the TX address of the RX node into the TX pipe
   radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
