@@ -1,3 +1,5 @@
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
@@ -19,6 +21,8 @@ uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
 bool radioNumber = 0; //Designates TX or RX radio
 char payload[] = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz";
 
+SoftwareSerial serial_connection(3, 4);
+TinyGPSPlus gps;
 bool gpsUpdate = false;
 
 File myFile;
@@ -27,23 +31,38 @@ byte sdPin = 7;
 void setup() {
   Wire.begin();
   Serial.begin(9600);
-  //sdSetup();
-  radioSetup();  
-    
+  gpsSetup();
+  sdSetup();
+  //radioSetup();  
   //gyroSetup();
   //magSetup(); 
 
 }
 
 void loop() {
-    radioWrite();
+    String data = gpsRead();
+    driveWrite(data);
+    Serial.print(data);
     delay(500);
 }
 
+String gpsRead() {
+  String toReturn = "";
+  gps.encode(serial_connection.read());
+  if(gps.location.isUpdated()) {
+    toReturn += String(gps.satellites.value()) + ",";
+    toReturn += String(gps.location.lat(), 6) + ",";
+    toReturn += String(gps.location.lng(), 6) + ",";
+    toReturn += String(gps.speed.mph(), 2) + ",";
+    toReturn += String(gps.altitude.feet(), 2) + "\n";
+  }
+  return toReturn;
+}
 void radioWrite(){
   radio.flush_tx();
   radioSend(payload);
 }
+
 bool radioSend(char msg[]) {
    bool report = 0; 
    char toWrite[32];
@@ -220,9 +239,15 @@ void sdSetup(){
     else {
             Serial.println("example.txt doesn't exist. Creating Now...");
                 myFile = SD.open("gps-log.txt", FILE_WRITE);
+                myFile.print("Time, Sat Count, Latitude, Longitude, Speed, Altitude\n");
                 myFile.close();
         }
      digitalWrite(sdPin, LOW);
+}
+
+void gpsSetup() {
+  serial_connection.begin(9600);
+  Serial.println("GPS Start");
 }
 
 void driveWrite(String s){
