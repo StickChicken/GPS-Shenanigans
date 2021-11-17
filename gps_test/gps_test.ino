@@ -1,7 +1,7 @@
 #include "TinyGPS++.h"
 #include "SoftwareSerial.h"
 
-SoftwareSerial serial_connection(3, 4);
+SoftwareSerial serial_connection(3, 4); //RX, TX
 TinyGPSPlus gps;
 void setup() {
   // put your setup code here, to run once:

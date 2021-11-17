@@ -21,9 +21,8 @@ uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
 bool radioNumber = 0; //Designates TX or RX radio
 char payload[] = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz";
 
-SoftwareSerial serial_connection(3, 4);
+SoftwareSerial serial_connection(3, 4); //RX, TX
 TinyGPSPlus gps;
-bool gpsUpdate = false;
 
 File myFile;
 byte sdPin = 7;
@@ -31,7 +30,8 @@ byte sdPin = 7;
 void setup() {
   Wire.begin();
   Serial.begin(9600);
-  gpsSetup();
+  serial_connection.begin(9600);
+  Serial.println("GPS Start");
   sdSetup();
   //radioSetup();  
   //gyroSetup();
@@ -48,6 +48,9 @@ void loop() {
 
 String gpsRead() {
   String toReturn = "";
+  while(serial_connection.available()) {
+    gps.encode(serial_connection.read());
+  }
   gps.encode(serial_connection.read());
   if(gps.location.isUpdated()) {
     toReturn += String(gps.satellites.value()) + ",";
@@ -114,7 +117,6 @@ void magSetup() {
   }
   Wire.endTransmission();
   Serial.println("mag init complete");
-  delay(300);
 }
 
 
@@ -199,7 +201,6 @@ void magRead() {
   Serial.println(yMag);
   Serial.print("Magnetic Field in Z-Axis : ");
   Serial.println(zMag);
-  delay(500);
 }
 
 void radioSetup(){
@@ -243,11 +244,6 @@ void sdSetup(){
                 myFile.close();
         }
      digitalWrite(sdPin, LOW);
-}
-
-void gpsSetup() {
-  serial_connection.begin(9600);
-  Serial.println("GPS Start");
 }
 
 void driveWrite(String s){
