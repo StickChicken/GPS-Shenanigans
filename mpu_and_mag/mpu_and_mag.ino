@@ -20,6 +20,7 @@ void setup() {
   Serial.begin(9600);
   gyroSetup();
   magSetup();
+  Serial.println("test");
 
 }
 
