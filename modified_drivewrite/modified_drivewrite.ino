@@ -11,7 +11,7 @@ SoftwareSerial serial_connection(3, 4); //RX, TX
 TinyGPSPlus gps;
 
 File myFile;
-byte sdPin = 7;
+int sdPin = 7;
 
 void setup() {
   Wire.begin();
@@ -24,13 +24,17 @@ void setup() {
 }
 
 void loop() {
-  gpsRead();
-  //gyroRead();
+  gps.encode(serial_connection.read());
+  if (gps.location.isUpdated()) {
+    gpsRead();
+    gyroRead();
+    newLine();
+  }
   //magRead();
 }
 
-int gpsRead() {
-  double buffer[5]{};
+void gpsRead() {
+  double buffer[5] {};
   delay(50);
   while (serial_connection.available()) {
     gps.encode(serial_connection.read());
@@ -42,7 +46,7 @@ int gpsRead() {
     buffer[2] = gps.location.lng();
     buffer[3] = gps.speed.mph();
     buffer[4] = gps.altitude.feet();
-    
+
     driveWrite("SAT");
     driveWrite(String(buffer[0]));
     driveWrite(",");
@@ -66,17 +70,18 @@ int gpsRead() {
     temp = String(buffer[4], 4);
     driveWrite(String(buffer[4]));
     driveWrite(",");
+    Serial.println("gps written");
     newLine();
   }
-  
+
 }
 
 /*
-String convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
+  String convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
   char tmp_str[7]; // temporary variable used in convert function
   sprintf(tmp_str, "%6d", i);
   return String(tmp_str);
-}*/
+  }*/
 
 void gyroSetup() {
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
@@ -115,13 +120,13 @@ void magSetup() {
 void gyroRead() {
   int accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
   int gyro_x, gyro_y, gyro_z; // variables for gyro raw data
-  int buffer[6]{};
-  
+  int buffer[6] {};
+
   Wire.beginTransmission(MPU_ADDR);
   Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H) [MPU-6000 and MPU-6050 Register Map and Descriptions Revision 4.2, p.40]
   Wire.endTransmission(false); // the parameter indicates that the Arduino will send a restart. As a result, the connection is kept active.
   Wire.requestFrom(MPU_ADDR, 7 * 2, true); // request a total of 7*2=14 registers
-  
+
   buffer[0] = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
   buffer[1] = Wire.read() << 8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
   buffer[2] = Wire.read() << 8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
@@ -132,7 +137,7 @@ void gyroRead() {
 
   driveWrite("AX");
   driveWrite(String(buffer[0]));
-  driveWrite(",");  
+  driveWrite(",");
 
   driveWrite("AY");
   driveWrite(String(buffer[1]));
@@ -154,22 +159,22 @@ void gyroRead() {
   driveWrite(String(buffer[5]));
   driveWrite(",");
 
-/*  // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
-  accelerometer_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
-  accelerometer_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
-  accelerometer_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
-  int16_t temp = Wire.read() << 8 | Wire.read();//pls work
-  gyro_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
-  gyro_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
-  gyro_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
+  /*  // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
+    accelerometer_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
+    accelerometer_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
+    accelerometer_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+    int16_t temp = Wire.read() << 8 | Wire.read();//pls work
+    gyro_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
+    gyro_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
+    gyro_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 
-dataString += "AX" + String(accelerometer_x) + ",";
-  dataString += "AY" + String(accelerometer_y) + ",";
-  dataString += "AZ" + String(accelerometer_z) + ",";
-  dataString += "GX" + String(gyro_x) + ",";
-  dataString += "GY" + String(gyro_y) + ",";
-  dataString += "GZ" + String(gyro_z) + ",";
-  return dataString;  */
+    dataString += "AX" + String(accelerometer_x) + ",";
+    dataString += "AY" + String(accelerometer_y) + ",";
+    dataString += "AZ" + String(accelerometer_z) + ",";
+    dataString += "GX" + String(gyro_x) + ",";
+    dataString += "GY" + String(gyro_y) + ",";
+    dataString += "GZ" + String(gyro_z) + ",";
+    return dataString;  */
 }
 
 void magRead() {
@@ -237,7 +242,7 @@ void sdSetup() {
   pinMode(sdPin, OUTPUT);
   if (!SD.begin(sdPin)) {
     Serial.println("SD Failed.");
-    while(1);
+    while (1);
   }
   Serial.println("SD Success.");
 
@@ -271,5 +276,5 @@ void newLine() {
   if (myFile) {
     myFile.println(" ");
     myFile.close();
-  }  
+  }
 }
