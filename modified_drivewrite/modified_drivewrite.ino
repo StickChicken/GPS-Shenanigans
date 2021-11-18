@@ -13,6 +13,8 @@ TinyGPSPlus gps;
 File myFile;
 int sdPin = 7;
 
+bool gpsUpdate = false;
+
 void setup() {
   Wire.begin();
   Serial.begin(9600);
@@ -24,17 +26,14 @@ void setup() {
 }
 
 void loop() {
-  gps.encode(serial_connection.read());
-  if (gps.location.isUpdated()) {
     gpsRead();
-    gyroRead();
-    newLine();
-  }
+    if(gpsUpdate) driveRead();
   //magRead();
 }
 
 void gpsRead() {
   double buffer[5] {};
+  gpsUpdate = false;
   delay(50);
   while (serial_connection.available()) {
     gps.encode(serial_connection.read());
@@ -70,8 +69,12 @@ void gpsRead() {
     temp = String(buffer[4], 4);
     driveWrite(String(buffer[4]));
     driveWrite(",");
-    Serial.println("gps written");
+
+    gyroRead();
+    
     newLine();
+
+    gpsUpdate = true;
   }
 
 }
@@ -270,6 +273,22 @@ void driveWrite(String s) {
   }
 }
 
+void driveRead(){
+  myFile = SD.open("gps-log.txt");
+  if (myFile) {
+    Serial.println("gps-log.txt:");
+
+    // read from the file until there's nothing else in it:
+    while (myFile.available()) {
+      Serial.write(myFile.read());
+    }
+    // close the file:
+    myFile.close();
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
+  }
+}
 
 void newLine() {
   myFile = SD.open("gps-log.txt", FILE_WRITE);
