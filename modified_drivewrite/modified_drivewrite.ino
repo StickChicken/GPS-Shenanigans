@@ -10,12 +10,7 @@
 #define MPU_ADDR 0x68
 #define MAG_ADDR 0x0C
 
-//
-
-//
-
-
-Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
+//Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 
 SoftwareSerial serial_connection(3, 4); //RX, TX
 TinyGPSPlus gps;
@@ -23,31 +18,36 @@ TinyGPSPlus gps;
 File myFile;
 int sdPin = 7;
 
-bool gpsUpdate = false;
+bool gpsCheck = false;
 
 void setup() {
   Wire.begin();
   Serial.begin(9600);
-    if (!bno.begin())
-  {
-    /* There was a problem detecting the BNO055 ... check your connections */
+  /*if (!bno.begin())
+    {
     Serial.print("BNO Failure");
     while (1);
-  }
-  
+    }*/
+
   serial_connection.begin(9600);
   Serial.println("GPS Start");
+  gyroSetup();
   sdSetup();
 }
 
 void loop() {
   gpsRead();
-  if(gpsUpdate) driveRead();
+  if (gpsCheck) {    
+    gyroRead();
+    newLine();
+    driveRead();
+  }
+
 }
 
 void gpsRead() {
+  gpsCheck = false;
   double buffer[5] {};
-  gpsUpdate = false;
   delay(50);
   while (serial_connection.available()) {
     gps.encode(serial_connection.read());
@@ -84,11 +84,7 @@ void gpsRead() {
     driveWrite(String(buffer[4]));
     driveWrite(",");
 
-    getBNO();
-    
-    newLine();
-
-    gpsUpdate = true;
+    gpsCheck = true;
   }
 
 }
@@ -100,7 +96,7 @@ void gpsRead() {
   return String(tmp_str);
   }*/
 
-/*
+
 void gyroSetup() {
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
   Wire.write(0x6B); // PWR_MGMT_1 register
@@ -109,9 +105,9 @@ void gyroSetup() {
   Serial.println("gyro init complete");
 
 }
-*/
+
 /*
-void magSetup() {
+  void magSetup() {
   Wire.beginTransmission(MAG_ADDR);
   // Select Write register command
   Wire.write(0x60);
@@ -134,10 +130,10 @@ void magSetup() {
   }
   Wire.endTransmission();
   Serial.println("mag init complete");
-}
+  }
 */
 
-/*
+
 void gyroRead() {
   int accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
   int gyro_x, gyro_y, gyro_z; // variables for gyro raw data
@@ -179,27 +175,28 @@ void gyroRead() {
   driveWrite("GZ");
   driveWrite(String(buffer[5]));
   driveWrite(",");
+  /*
+      // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
+      accelerometer_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
+      accelerometer_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
+      accelerometer_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+      int16_t temp = Wire.read() << 8 | Wire.read();//pls work
+      gyro_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
+      gyro_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
+      gyro_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 
-    // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
-    accelerometer_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
-    accelerometer_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
-    accelerometer_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
-    int16_t temp = Wire.read() << 8 | Wire.read();//pls work
-    gyro_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
-    gyro_y = Wire.read() << 8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
-    gyro_z = Wire.read() << 8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
-
-    dataString += "AX" + String(accelerometer_x) + ",";
-    dataString += "AY" + String(accelerometer_y) + ",";
-    dataString += "AZ" + String(accelerometer_z) + ",";
-    dataString += "GX" + String(gyro_x) + ",";
-    dataString += "GY" + String(gyro_y) + ",";
-    dataString += "GZ" + String(gyro_z) + ",";
-    return dataString;  
+      dataString += "AX" + String(accelerometer_x) + ",";
+      dataString += "AY" + String(accelerometer_y) + ",";
+      dataString += "AZ" + String(accelerometer_z) + ",";
+      dataString += "GX" + String(gyro_x) + ",";
+      dataString += "GY" + String(gyro_y) + ",";
+      dataString += "GZ" + String(gyro_z) + ",";
+      return dataString;
+  */
 }
-*/
+
 /*
-void magRead() {
+  void magRead() {
   unsigned int data[7];
 
   // Start I2C Transmission
@@ -258,17 +255,17 @@ void magRead() {
   driveWrite("MZ");
   driveWrite(String(zMag));
   driveWrite(",");
-}
+  }
 */
+/*
+  void getBNO(){
 
-void getBNO(){
-  
   sensors_event_t angVelocityData , magnetometerData, accelerometerData;
   bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&magnetometerData, Adafruit_BNO055::VECTOR_MAGNETOMETER);
   bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
 
-  
+
   printEvent(&accelerometerData);
   printEvent(&angVelocityData);
   printEvent(&magnetometerData);
@@ -276,9 +273,9 @@ void getBNO(){
   bno.getCalibration(&system, &gyro, &accel, &mag);
 
   delay(100);
-}
+  }
 
-void printEvent(sensors_event_t* event) {
+  void printEvent(sensors_event_t* event) {
   float x = -1000000, y = -1000000 , z = -1000000; //dumb values, easy to spot problem
   String temp = "";
   if (event->type == SENSOR_TYPE_ACCELEROMETER) {
@@ -290,12 +287,12 @@ void printEvent(sensors_event_t* event) {
     driveWrite(temp);
     driveWrite(",");
 
-    driveWrite("AY");    
+    driveWrite("AY");
     temp = String(y,4);
     driveWrite(temp);
     driveWrite(",");
 
-    driveWrite("AZ");    
+    driveWrite("AZ");
     temp = String(z,4);
     driveWrite(temp);
     driveWrite(",");
@@ -304,7 +301,7 @@ void printEvent(sensors_event_t* event) {
     x = event->magnetic.x;
     y = event->magnetic.y;
     z = event->magnetic.z;
-    
+
     driveWrite("MX");
     driveWrite(String(x, 4));
     driveWrite(",");
@@ -321,7 +318,7 @@ void printEvent(sensors_event_t* event) {
     x = event->gyro.x;
     y = event->gyro.y;
     z = event->gyro.z;
-    
+
     driveWrite("GX");
     driveWrite(String(x, 4));
     driveWrite(",");
@@ -334,7 +331,8 @@ void printEvent(sensors_event_t* event) {
     driveWrite(String(z,4));
     driveWrite(",");
   }
-}
+  }
+*/
 
 void sdSetup() {
   pinMode(sdPin, OUTPUT);
@@ -354,7 +352,7 @@ void sdSetup() {
     Serial.println("Creating .txt...");
   }
   myFile = SD.open("gps-log.txt", FILE_WRITE);
-  myFile.print("Time, Sat Count, Latitude, Longitude, Speed, Altitude\n");
+  myFile.print("Sat Count, Latitude, Longitude, Speed, Altitude\n");
   myFile.close();
 
   digitalWrite(sdPin, LOW);
@@ -368,7 +366,7 @@ void driveWrite(String s) {
   }
 }
 
-void driveRead(){
+void driveRead() {
   myFile = SD.open("gps-log.txt");
   if (myFile) {
     Serial.println("gps-log.txt:");
@@ -388,7 +386,7 @@ void driveRead(){
 void newLine() {
   myFile = SD.open("gps-log.txt", FILE_WRITE);
   if (myFile) {
-    myFile.println(" ");
+    myFile.println("");
     myFile.close();
   }
 }
