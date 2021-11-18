@@ -13,8 +13,6 @@
 //radio constants
 RF24 radio(9, 10); // Use pin 9 for radio CE, use pin 10 for radio CSN
 uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
-bool radioNumber = 0; //Designates TX or RX radio
-char payload[] = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz";
 
 SoftwareSerial serial_connection(3, 4); //RX, TX
 TinyGPSPlus gps;
@@ -34,9 +32,12 @@ void setup() {
 }
 
 void loop() {
+  char buf[100];
   //String data = gpsRead();
-  String data = gyroRead();
-  data += magRead();
+  String gyrodata = gyroRead();
+  int temp[3];
+  magRead(temp);
+  String magData = String(temp[0]) + "," + String(temp[1]) + "," + String(temp[2]);
   //driveWrite(data);
   Serial.println(data);
   delay(500);
@@ -60,9 +61,9 @@ String gpsRead() {
 
 
 
-void radioWrite() {
+void radioWrite(char msg[]) {
   radio.flush_tx();
-  radioSend(payload);
+  radioSend(msg);
 }
 
 bool radioSend(char msg[]) {
@@ -147,7 +148,7 @@ String gyroRead() {
   return dataString;
 }
 
-String magRead() {
+void magRead(int temp[]) {
   unsigned int data[7];
 
   // Start I2C Transmission
@@ -191,16 +192,9 @@ String magRead() {
   }
 
   // Convert the data
-  int xMag = data[1] * 256 + data[2];
-  int yMag = data[3] * 256 + data[4];
-  int zMag = data[5] * 256 + data[6];
-
-  String toReturn = "MX" ;
-  toReturn += "MX" + String(xMag) + ",";
-  toReturn += "MY" + String(yMag) + ",";
-  toReturn += "MZ" + String(zMag) + "\n";
-  delay(500);
-  return String("MX" + String(xMag) + ",");
+  temp[0] = data[1] * 256 + data[2];
+  temp[1] = data[3] * 256 + data[4];
+  temp[2] = data[5] * 256 + data[6];
 }
 
 void radioSetup() {
@@ -220,7 +214,7 @@ void radioSetup() {
   radio.setPayloadSize(32); // float datatype occupies 4 bytes
 
   // set the TX address of the RX node into the TX pipe
-  radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
+  radio.openWritingPipe(address[0]);     // always uses pipe 0
   radio.stopListening();  // put radio in TX mode
   Serial.println("Radio init success...");
 }
