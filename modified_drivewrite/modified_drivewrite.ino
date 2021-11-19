@@ -60,29 +60,29 @@ void gpsRead() {
     buffer[3] = gps.speed.mph();
     buffer[4] = gps.altitude.feet();
 
-    driveWrite("SAT");
     driveWrite(String(buffer[0]));
     driveWrite(",");
-
-    driveWrite("LAT");
+    radioSend(String(buffer[0]) + ",");
+    
     String temp = String(buffer[1], 4);
     driveWrite(temp);
     driveWrite(",");
+    radioSend(temp + ",");
 
-    driveWrite("LNG");
     temp = String(buffer[2], 4);
     driveWrite(temp);
     driveWrite(",");
-
-    driveWrite("SPD");
+    radioSend(temp + ",");
+    
     temp = String(buffer[3], 4);
     driveWrite(String(buffer[3]));
     driveWrite(",");
+    radioSend(temp + ",");
 
-    driveWrite("ALT");
     temp = String(buffer[4], 4);
     driveWrite(String(buffer[4]));
     driveWrite(",");
+    radioSend(temp + ",");
 
     gpsCheck = true;
   }
@@ -152,29 +152,30 @@ void gyroRead() {
   buffer[4] = Wire.read() << 8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
   buffer[5] = Wire.read() << 8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 
-  driveWrite("AX");
   driveWrite(String(buffer[0]));
   driveWrite(",");
+  radioSend(String(buffer[0]) + ",");
 
-  driveWrite("AY");
   driveWrite(String(buffer[1]));
   driveWrite(",");
+  radioSend(String(buffer[1]) + ",");
 
-  driveWrite("AZ");
   driveWrite(String(buffer[2]));
   driveWrite(",");
+  radioSend(String(buffer[2]) + ",");
 
-  driveWrite("GX");
   driveWrite(String(buffer[3]));
   driveWrite(",");
+  radioSend(String(buffer[3]) + ",");
 
-  driveWrite("GY");
   driveWrite(String(buffer[4]));
   driveWrite(",");
+  radioSend(String(buffer[4]) + ",");
 
   driveWrite("GZ");
   driveWrite(String(buffer[5]));
   driveWrite(",");
+  radioSend("GZ" + String(buffer[5]) + ",");
   /*
       // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
       accelerometer_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
@@ -333,6 +334,20 @@ void gyroRead() {
   }
   }
 */
+
+void radioSend(String str) {
+  char buf[] = str.toCharArray();
+  char toWrite[32];
+  if (strlen(msg) <= 32) {
+    strncpy(toWrite, buf, 32);
+    radio.write(&toWrite, 32);
+  } else {
+    for (int i = 0; i < strlen(msg); i += 32) {
+      strncpy(toWrite, buf + i, 32);
+      radio.write(&toWrite, strlen(toWrite));
+    }
+  }
+}
 
 void sdSetup() {
   pinMode(sdPin, OUTPUT);

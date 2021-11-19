@@ -19,12 +19,6 @@ RF24 radio(9, 10); // using pin 7 for the CE pin, and pin 8 for the CSN pin
 
 // Let these addresses be used for the pair
 uint8_t address[][6] = {"1Node", "2Node"};
-// It is very helpful to think of an address as a path instead of as
-// an identifying device destination
-
-// to use different addresses on a pair of radios, we need a variable to
-// uniquely identify which address this radio will use to transmit
-bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
 
 void setup() {
 
@@ -45,7 +39,7 @@ void setup() {
   radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
   radio.setPayloadSize(32);
   // set the RX address of the TX node into a RX pipe
-  radio.openReadingPipe(1, address[!radioNumber]); // using pipe 1
+  radio.openReadingPipe(1, address[0]); // using pipe 1
   radio.startListening(); // put radio in RX mode
 
   // For debugging info
