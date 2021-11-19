@@ -2,17 +2,14 @@
 #include "printf.h"
 #include "RF24.h"
 
-RF24 radio(9, 10); // using pin 9 for the CE pin, and pin 10 for the CSN pin
+RF24 radio(9, 10); // using pin 7 for the CE pin, and pin 8 for the CSN pin
 
-// Let these addresses be used for the pair
 uint8_t address[][6] = {"1Node", "2Node"};
 
-bool radioNumber = 0; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
-
-char payload[32] = {"testing"};
-
+char payload[]= "abcdefghijklmnopqrstuvwxyz-abcdefghijkl";
 
 void setup() {
+
   Serial.begin(9600);
   while (!Serial) {
     // some boards need to wait to ensure access to serial over USB
@@ -24,6 +21,8 @@ void setup() {
     while (1) {} // hold in infinite loop
   }
 
+  Serial.print(F("radioNumber = 0"));
+
   // Set the PA Level low to try preventing power supply related problems
   // because these examples are likely run with nodes in close proximity to
   // each other.
@@ -31,10 +30,12 @@ void setup() {
 
   // save on transmission time by setting the radio to only transmit the
   // number of bytes we need to transmit a float
-  radio.setPayloadSize(32);
-  
+  radio.setPayloadSize(32); // float datatype occupies 4 bytes
+
   // set the TX address of the RX node into the TX pipe
-  radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
+  radio.openWritingPipe(address[0]);     // always uses pipe 0
+
+  // additional setup specific to the node's role
   radio.stopListening();  // put radio in TX mode
 
   // For debugging info
@@ -45,28 +46,22 @@ void setup() {
 } // setup
 
 void loop() {
-  radio.write();
-  
-}
-
-void radioWrite(){
-  delay(1);
-  radio.flush_tx();
   radioSend(payload);
   // to make this example readable in the serial monitor
-  delay(100);  // slow transmissions down by 1 second
-}
-bool radioSend(char msg[]) {
-   bool report = 0; 
-   char toWrite[32];
-   if(strlen(msg) <= 32) {
-      strncpy(toWrite, msg, 32);
-      report = radio.write(&toWrite, 32);
-   } else {
-    for(int i = 0; i < strlen(msg); i += 32) {
-       strncpy(toWrite, msg+i, 32);
-       report = radio.write(&toWrite, strlen(toWrite));  
+  delay(1000);  // slow transmissions down by 1 second
+
+} // loop
+
+void radioSend(char msg[]) {
+  char toWrite[32];
+  if (strlen(msg) <= 32) {
+    strncpy(toWrite, msg, 32);
+    radio.write(&toWrite, 32);
+  } else {
+    for (int i = 0; i < strlen(msg); i += 32) {
+      strncpy(toWrite, msg + i, 32);
+      radio.write(&toWrite, strlen(toWrite));
+      Serial.println("more 32");
     }
-   }
-   return report;
+  }
 }
