@@ -6,6 +6,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
+#include <RF24.h>
 
 #define MPU_ADDR 0x68
 #define MAG_ADDR 0x0C
@@ -14,11 +15,14 @@
 
 SoftwareSerial serial_connection(3, 4); //RX, TX
 TinyGPSPlus gps;
+RF24 radio(9, 10);
+
+uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
 
 File myFile;
 int sdPin = 7;
 
-bool gpsCheck = false;
+bool gpsCheck = true;
 
 void setup() {
   Wire.begin();
@@ -32,15 +36,17 @@ void setup() {
   serial_connection.begin(9600);
   Serial.println("GPS Start");
   gyroSetup();
-  sdSetup();
+  radioSetup();
+  //sdSetup();
 }
 
 void loop() {
-  gpsRead();
+  //gpsRead();
   if (gpsCheck) {    
     gyroRead();
     newLine();
     driveRead();
+    Serial.println("data sent");
   }
 
 }
@@ -152,30 +158,42 @@ void gyroRead() {
   buffer[4] = Wire.read() << 8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
   buffer[5] = Wire.read() << 8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 
-  driveWrite(String(buffer[0]));
-  driveWrite(",");
-  radioSend(String(buffer[0]) + ",");
+  //driveWrite(String(buffer[0]));
+  //driveWrite(",");
+  
+  radioSend("AX " + String(buffer[0]));
 
-  driveWrite(String(buffer[1]));
-  driveWrite(",");
-  radioSend(String(buffer[1]) + ",");
+  delay(10);
 
-  driveWrite(String(buffer[2]));
-  driveWrite(",");
-  radioSend(String(buffer[2]) + ",");
+  //driveWrite(String(buffer[1]));
+  //driveWrite(",");
+  radioSend("AY " + String(buffer[1]));
 
-  driveWrite(String(buffer[3]));
-  driveWrite(",");
-  radioSend(String(buffer[3]) + ",");
+  delay(10);
 
-  driveWrite(String(buffer[4]));
-  driveWrite(",");
-  radioSend(String(buffer[4]) + ",");
+  //driveWrite(String(buffer[2]));
+  //driveWrite(",");
+  radioSend("AZ " + String(buffer[2]));
 
-  driveWrite("GZ");
-  driveWrite(String(buffer[5]));
-  driveWrite(",");
-  radioSend("GZ" + String(buffer[5]) + ",");
+  delay(10);
+
+  //driveWrite(String(buffer[3]));
+  //driveWrite(",");
+  radioSend("GX " + String(buffer[3]));
+
+  delay(10);
+
+  //driveWrite(String(buffer[4]));
+  //driveWrite(",");
+  radioSend("GY " + String(buffer[4]));
+
+  delay(10);
+  
+  //driveWrite("GZ");
+  //driveWrite(String(buffer[5]));
+  //driveWrite(",");
+  radioSend("GZ " + String(buffer[5]));
+  delay(1000);
   /*
       // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
       accelerometer_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
@@ -336,17 +354,42 @@ void gyroRead() {
 */
 
 void radioSend(String str) {
-  char buf[] = str.toCharArray();
+  int len = str.length();
+  char msg[len];
+  str.toCharArray(msg,str.length());
   char toWrite[32];
   if (strlen(msg) <= 32) {
-    strncpy(toWrite, buf, 32);
+    strncpy(toWrite, msg, 32);
     radio.write(&toWrite, 32);
   } else {
     for (int i = 0; i < strlen(msg); i += 32) {
-      strncpy(toWrite, buf + i, 32);
+      strncpy(toWrite, msg + i, 32);
       radio.write(&toWrite, strlen(toWrite));
     }
   }
+}
+
+void radioSetup(){
+  // initialize the transceiver on the SPI bus
+  if (!radio.begin()) {
+    Serial.println(F("radio hardware is not responding!!"));
+    while (1) {} // hold in infinite loop
+  }
+
+  // Set the PA Level low to try preventing power supply related problems
+  // because these examples are likely run with nodes in close proximity to
+  // each other.
+  radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
+
+  // save on transmission time by setting the radio to only transmit the
+  // number of bytes we need to transmit a float
+  radio.setPayloadSize(32); // float datatype occupies 4 bytes
+
+  // set the TX address of the RX node into the TX pipe
+  radio.openWritingPipe(address[0]);     // always uses pipe 0
+
+  // additional setup specific to the node's role
+  radio.stopListening();  // put radio in TX mode
 }
 
 void sdSetup() {
