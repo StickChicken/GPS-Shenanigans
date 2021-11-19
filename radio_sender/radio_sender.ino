@@ -21,8 +21,6 @@ void setup() {
     while (1) {} // hold in infinite loop
   }
 
-  Serial.print(F("radioNumber = 0"));
-
   // Set the PA Level low to try preventing power supply related problems
   // because these examples are likely run with nodes in close proximity to
   // each other.
@@ -61,7 +59,6 @@ void radioSend(char msg[]) {
     for (int i = 0; i < strlen(msg); i += 32) {
       strncpy(toWrite, msg + i, 32);
       radio.write(&toWrite, strlen(toWrite));
-      Serial.println("more 32");
     }
   }
 }
