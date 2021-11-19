@@ -22,26 +22,21 @@ uint8_t address[][6] = {"1Node", "2Node"}; //addresses for paths between radios
 File myFile;
 int sdPin = 7;
 
-bool gpsCheck = true;
+bool gpsCheck = false;
 
 void setup() {
   Wire.begin();
   Serial.begin(9600);
-  /*if (!bno.begin())
-    {
-    Serial.print("BNO Failure");
-    while (1);
-    }*/
 
   serial_connection.begin(9600);
   Serial.println("GPS Start");
   gyroSetup();
-  radioSetup();
-  //sdSetup();
+  sdSetup();
+  radioSetup();  
 }
 
 void loop() {
-  //gpsRead();
+  gpsRead();
   if (gpsCheck) {    
     gyroRead();
     newLine();
@@ -158,40 +153,39 @@ void gyroRead() {
   buffer[4] = Wire.read() << 8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
   buffer[5] = Wire.read() << 8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
 
-  //driveWrite(String(buffer[0]));
-  //driveWrite(",");
+  driveWrite(String(buffer[0]));
+  driveWrite(",");
   
   radioSend("AX " + String(buffer[0]));
 
   delay(10);
 
-  //driveWrite(String(buffer[1]));
-  //driveWrite(",");
+  driveWrite(String(buffer[1]));
+  driveWrite(",");
   radioSend("AY " + String(buffer[1]));
 
   delay(10);
 
-  //driveWrite(String(buffer[2]));
-  //driveWrite(",");
+  driveWrite(String(buffer[2]));
+  driveWrite(",");
   radioSend("AZ " + String(buffer[2]));
 
   delay(10);
 
-  //driveWrite(String(buffer[3]));
-  //driveWrite(",");
+  driveWrite(String(buffer[3]));
+  driveWrite(",");
   radioSend("GX " + String(buffer[3]));
 
   delay(10);
 
-  //driveWrite(String(buffer[4]));
-  //driveWrite(",");
+  driveWrite(String(buffer[4]));
+  driveWrite(",");
   radioSend("GY " + String(buffer[4]));
 
   delay(10);
   
-  //driveWrite("GZ");
-  //driveWrite(String(buffer[5]));
-  //driveWrite(",");
+  driveWrite(String(buffer[5]));
+  driveWrite(",");
   radioSend("GZ " + String(buffer[5]));
   delay(1000);
   /*
@@ -412,8 +406,6 @@ void sdSetup() {
   myFile = SD.open("gps-log.txt", FILE_WRITE);
   myFile.print("Sat Count, Latitude, Longitude, Speed, Altitude\n");
   myFile.close();
-
-  digitalWrite(sdPin, LOW);
 }
 
 void driveWrite(String s) {
