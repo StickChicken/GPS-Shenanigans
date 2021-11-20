@@ -9,7 +9,7 @@
 #include <RF24.h>
 
 #define MPU_ADDR 0x68
-#define MAG_ADDR 0x0C
+//#define MAG_ADDR 0x0C
 
 //Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 
@@ -23,6 +23,7 @@ File myFile;
 int sdPin = 7;
 
 bool gpsCheck = false;
+int count = 0;
 
 void setup() {
   Wire.begin();
@@ -32,7 +33,8 @@ void setup() {
   Serial.println("GPS Start");
   gyroSetup();
   sdSetup();
-  radioSetup();  
+  radioSetup(); 
+
 }
 
 void loop() {
@@ -40,10 +42,9 @@ void loop() {
   if (gpsCheck) {    
     gyroRead();
     newLine();
-    driveRead();
     Serial.println("data sent");
   }
-
+  delay(100);
 }
 
 void gpsRead() {
@@ -155,7 +156,7 @@ void gyroRead() {
 
   driveWrite(String(buffer[0]));
   driveWrite(",");
-  
+
   radioSend("AX " + String(buffer[0]));
 
   delay(10);
@@ -183,11 +184,10 @@ void gyroRead() {
   radioSend("GY " + String(buffer[4]));
 
   delay(10);
-  
+
   driveWrite(String(buffer[5]));
   driveWrite(",");
   radioSend("GZ " + String(buffer[5]));
-  delay(1000);
   /*
       // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same variable
       accelerometer_x = Wire.read() << 8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
@@ -404,7 +404,7 @@ void sdSetup() {
     Serial.println("Creating .txt...");
   }
   myFile = SD.open("gps-log.txt", FILE_WRITE);
-  myFile.print("Sat Count, Latitude, Longitude, Speed, Altitude\n");
+  myFile.print("Sat Count, Latitude, Longitude, Speed, Altitude, Accel X, Accel Y, Accel Z, Gyro X, Gyro Y, Gyro Z\n");
   myFile.close();
 }
 
