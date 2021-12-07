@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "Project 2, GPS Code."
+authors:
+- family-names: "Wyatt"
+- family-names: "Nathan"
+title: "GPS-Shenanigans"
+version: 1.0.0
+doi: 10.5281/zenodo.1234
+date-released: 2021-12-06
+url: "https://github.com/StickChicken/GPS-Shenanigans"
